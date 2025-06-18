@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
+from typing import AsyncGenerator
 
 from app.core import config
 
@@ -16,6 +17,14 @@ async_session = async_sessionmaker(
 Base = declarative_base()
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Асинхронный генератор сессий базы данных.
+
+    Используется в Depends() FastAPI для получения сессии.
+
+    Yields:
+        AsyncSession: Асинхронная сессия для работы с БД.
+    """
     async with async_session() as session:
         yield session
