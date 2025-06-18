@@ -10,13 +10,35 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[OrderRead])
-async def get_orders(session: AsyncSession = Depends(database.get_db)):
+async def get_orders(session: AsyncSession = Depends(database.get_db)) -> List[OrderRead]:
+    """
+    Получить список всех заказов.
+
+    Args:
+        session (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        List[OrderRead]: Список заказов в формате OrderRead.
+    """
     service = OrderService(session)
     return await service.get_all()
 
 
 @router.post("/", response_model=OrderRead)
-async def create_order(order: OrderCreate, session: AsyncSession = Depends(database.get_db)):
+async def create_order(order: OrderCreate, session: AsyncSession = Depends(database.get_db)) -> OrderRead:
+    """
+    Создать новый заказ.
+
+    Args:
+        order (OrderCreate): Данные для создания заказа.
+        session (AsyncSession): Асинхронная сессия базы данных.
+
+    Raises:
+        HTTPException: При ошибках валидации данных (статус 400).
+
+    Returns:
+        OrderRead: Созданный заказ.
+    """
     service = OrderService(session)
     try:
         return await service.create(order)
@@ -25,7 +47,17 @@ async def create_order(order: OrderCreate, session: AsyncSession = Depends(datab
 
 
 @router.delete("/{order_id}", status_code=204)
-async def cancel_order(order_id: int, session: AsyncSession = Depends(database.get_db)):
+async def cancel_order(order_id: int, session: AsyncSession = Depends(database.get_db)) -> None:
+    """
+    Отменить (удалить) заказ по ID.
+
+    Args:
+        order_id (int): Идентификатор заказа.
+        session (AsyncSession): Асинхронная сессия базы данных.
+
+    Raises:
+        HTTPException: Если заказ не найден (404) или другая ошибка (400).
+    """
     service = OrderService(session)
     try:
         success = await service.delete(order_id)
@@ -36,8 +68,22 @@ async def cancel_order(order_id: int, session: AsyncSession = Depends(database.g
 
 
 @router.patch("/{order_id}/status", response_model=OrderRead)
-async def update_order_status(
-        order_id: int, status_update: OrderStatusUpdate, session: AsyncSession = Depends(database.get_db)):
+async def update_order_status(order_id: int, status_update: OrderStatusUpdate,
+                              session: AsyncSession = Depends(database.get_db)) -> OrderRead:
+    """
+    Обновить статус заказа.
+
+    Args:
+        order_id (int): Идентификатор заказа.
+        status_update (OrderStatusUpdate): Новое значение статуса.
+        session (AsyncSession): Асинхронная сессия базы данных.
+
+    Raises:
+        HTTPException: При ошибках валидации или невозможности обновления статуса (400).
+
+    Returns:
+        OrderRead: Обновленный заказ.
+    """
     service = OrderService(session)
     try:
         return await service.update_status(order_id, status_update)
