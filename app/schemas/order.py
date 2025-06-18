@@ -10,7 +10,8 @@ class OrderBase(BaseModel):
     status: str = Field(default="в обработке", example="в обработке")
 
 
-class OrderCreate(OrderBase):
+class OrderCreate(BaseModel):
+    customer_name: str = Field(..., example="Иван Иванов")
     dish_ids: List[int] = Field(..., example=[1, 2])
 
 
