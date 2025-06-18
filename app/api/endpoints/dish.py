@@ -5,7 +5,7 @@ from app.schemas.dish import DishCreate, DishRead
 from app.core import database
 from app.services.dish_service import DishService
 
-router = APIRouter(prefix="/dishes", tags=["Dishes"])
+router = APIRouter()
 
 
 @router.get("/", response_model=list[DishRead])
