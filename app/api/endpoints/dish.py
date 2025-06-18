@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Sequence, List, Dict, Any
+from typing import Sequence, List, Dict
 
 from app.schemas.dish import DishCreate, DishRead
 from app.models.dish import Dish
