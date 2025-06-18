@@ -2,11 +2,12 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from datetime import datetime
+from typing import Sequence, List
 
 from app.models.order import Order
 from app.models.dish import Dish
 from app.schemas.order import OrderCreate, OrderStatusUpdate
-from datetime import datetime
 
 
 class OrderService:
@@ -17,15 +18,38 @@ class OrderService:
         "завершен": [],
     }
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
+        """
+        Инициализация сервиса заказов.
+
+        Args:
+            session (AsyncSession): Асинхронная сессия базы данных.
+        """
         self.session = session
 
-    async def get_all(self):
+    async def get_all(self) -> Sequence[Order]:
+        """
+        Получить все заказы с предзагрузкой связанных блюд.
+
+        Returns:
+            List[Order]: Список всех заказов.
+        """
         result = await self.session.execute(select(Order).options(selectinload(Order.dishes)))
         return result.scalars().all()
 
-    async def create(self, order_create: OrderCreate):
-        # Проверяем, что все блюда существуют
+    async def create(self, order_create: OrderCreate) -> Order:
+        """
+        Создать новый заказ.
+
+        Args:
+            order_create (OrderCreate): Данные для создания заказа.
+
+        Raises:
+            ValueError: Если какое-либо блюдо не найдено.
+
+        Returns:
+            Order: Созданный заказ с загруженными блюдами.
+        """
         dishes = []
         for dish_id in order_create.dish_ids:
             dish = await self.session.get(Dish, dish_id)
@@ -53,7 +77,19 @@ class OrderService:
 
         return order
 
-    async def delete(self, order_id: int):
+    async def delete(self, order_id: int) -> bool:
+        """
+        Удалить заказ по идентификатору, если он в статусе "в обработке".
+
+        Args:
+            order_id (int): Идентификатор заказа для удаления.
+
+        Raises:
+            ValueError: Если заказ не в статусе "в обработке".
+
+        Returns:
+            bool: True, если заказ удалён, иначе False.
+        """
         order = await self.session.get(Order, order_id)
         if not order:
             return False
@@ -63,7 +99,20 @@ class OrderService:
         await self.session.commit()
         return True
 
-    async def update_status(self, order_id: int, status_update: OrderStatusUpdate):
+    async def update_status(self, order_id: int, status_update: OrderStatusUpdate) -> Order:
+        """
+        Обновить статус заказа с проверкой допустимых переходов.
+
+        Args:
+            order_id (int): Идентификатор заказа.
+            status_update (OrderStatusUpdate): Новый статус заказа.
+
+        Raises:
+            HTTPException: Если заказ не найден или переход статуса недопустим.
+
+        Returns:
+            Order: Заказ с обновлённым статусом.
+        """
         result = await self.session.execute(
             select(Order).options(selectinload(Order.dishes)).where(Order.id == order_id)
         )
