@@ -20,6 +20,6 @@ app = FastAPI(
 """
 )
 
-app.include_router(api_router, prefix="/api")
+app.include_router(api_router)
 
 # Для запуска – uvicorn app.main:app --reload
