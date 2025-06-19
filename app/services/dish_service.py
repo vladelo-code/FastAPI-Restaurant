@@ -5,6 +5,7 @@ from typing import Sequence, Optional
 
 from app.models.dish import Dish
 from app.schemas.dish import DishCreate
+from app.core.logger import logger
 
 
 class DishService:
@@ -24,8 +25,11 @@ class DishService:
         Returns:
             Sequence[Dish]: Список всех блюд.
         """
+        logger.info("Получение всех блюд из базы данных")
         result = self.session.execute(select(Dish))
-        return result.scalars().all()
+        dishes = result.scalars().all()
+        logger.debug(f"Найдено {len(dishes)} блюд")
+        return dishes
 
     async def get_by_id(self, dish_id: int) -> Optional[Dish]:
         """
@@ -37,7 +41,13 @@ class DishService:
         Returns:
             Optional[Dish]: Объект блюда, если найден, иначе None.
         """
-        return self.session.get(Dish, dish_id)
+        logger.info(f"Получение блюда по ID: {dish_id}")
+        dish = self.session.get(Dish, dish_id)
+        if dish:
+            logger.debug(f"Блюдо найдено: {dish.name}")
+        else:
+            logger.warning(f"Блюдо с ID {dish_id} не найдено")
+        return dish
 
     async def create(self, dish_create: DishCreate) -> Dish:
         """
@@ -52,13 +62,16 @@ class DishService:
         Returns:
             Dish: Созданное блюдо.
         """
+        logger.info(f"Создание нового блюда: {dish_create.name}")
         dish = Dish(**dish_create.model_dump())
         self.session.add(dish)
         try:
             self.session.commit()
             self.session.refresh(dish)
-        except SQLAlchemyError:
+            logger.debug(f"Блюдо успешно создано с ID: {dish.id}")
+        except SQLAlchemyError as e:
             self.session.rollback()
+            logger.error(f"Ошибка при создании блюда: {e}")
             raise
         return dish
 
@@ -75,13 +88,17 @@ class DishService:
         Returns:
             bool: True, если блюдо было удалено, False если не найдено.
         """
+        logger.info(f"Удаление блюда с ID: {dish_id}")
         dish = await self.get_by_id(dish_id)
         if dish:
             self.session.delete(dish)
             try:
                 self.session.commit()
-            except SQLAlchemyError:
+                logger.debug(f"Блюдо с ID {dish_id} успешно удалено")
+            except SQLAlchemyError as e:
                 self.session.rollback()
+                logger.error(f"Ошибка при удалении блюда с ID {dish_id}: {e}")
                 raise
             return True
+        logger.warning(f"Попытка удалить несуществующее блюдо с ID {dish_id}")
         return False
