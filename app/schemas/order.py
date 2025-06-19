@@ -6,13 +6,13 @@ from app.schemas.dish import DishRead
 
 
 class OrderBase(BaseModel):
-    customer_name: str = Field(..., example="Иван Иванов")
-    status: str = Field(default="в обработке", example="в обработке")
+    customer_name: str = Field(..., json_schema_extra={"example": "Иван Иванов"})
+    status: str = Field(default="в обработке", json_schema_extra={"example": "в обработке"})
 
 
 class OrderCreate(BaseModel):
-    customer_name: str = Field(..., example="Иван Иванов")
-    dish_ids: List[int] = Field(..., example=[1, 2])
+    customer_name: str = Field(..., json_schema_extra={"example": "Иван Иванов"})
+    dish_ids: List[int] = Field(..., json_schema_extra={"example": [1, 2]})
 
 
 class OrderRead(OrderBase):
@@ -24,7 +24,7 @@ class OrderRead(OrderBase):
 
 
 class OrderStatusUpdate(BaseModel):
-    status: str = Field(..., example="готовится")
+    status: str = Field(..., json_schema_extra={"example": "готовится"})
 
     @field_validator("status")
     def validate_status(cls, v):
