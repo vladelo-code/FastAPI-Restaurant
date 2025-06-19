@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from sqlalchemy.orm import Session
+from typing import Sequence, List
 
 from app.core import database
+from app.models.order import Order
 from app.schemas.order import OrderCreate, OrderRead, OrderStatusUpdate
 from app.services.order_service import OrderService
 
@@ -10,34 +11,34 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[OrderRead])
-async def get_orders(session: AsyncSession = Depends(database.get_db)) -> List[OrderRead]:
+async def get_orders(session: Session = Depends(database.get_db)) -> Sequence[Order]:
     """
     Получить список всех заказов.
 
     Args:
-        session (AsyncSession): Асинхронная сессия базы данных.
+        session (Session): Сессия базы данных.
 
     Returns:
-        List[OrderRead]: Список заказов в формате OrderRead.
+        Sequence[Order]: Список заказов в формате Order.
     """
     service = OrderService(session)
     return await service.get_all()
 
 
 @router.post("/", response_model=OrderRead)
-async def create_order(order: OrderCreate, session: AsyncSession = Depends(database.get_db)) -> OrderRead:
+async def create_order(order: OrderCreate, session: Session = Depends(database.get_db)) -> Order:
     """
     Создать новый заказ.
 
     Args:
         order (OrderCreate): Данные для создания заказа.
-        session (AsyncSession): Асинхронная сессия базы данных.
+        session (Session): Сессия базы данных.
 
     Raises:
         HTTPException: При ошибках валидации данных (статус 400).
 
     Returns:
-        OrderRead: Созданный заказ.
+        Order: Созданный заказ.
     """
     service = OrderService(session)
     try:
@@ -47,13 +48,13 @@ async def create_order(order: OrderCreate, session: AsyncSession = Depends(datab
 
 
 @router.delete("/{order_id}", status_code=204)
-async def cancel_order(order_id: int, session: AsyncSession = Depends(database.get_db)) -> None:
+async def cancel_order(order_id: int, session: Session = Depends(database.get_db)) -> None:
     """
     Отменить (удалить) заказ по ID.
 
     Args:
         order_id (int): Идентификатор заказа.
-        session (AsyncSession): Асинхронная сессия базы данных.
+        session (Session): Сессия базы данных.
 
     Raises:
         HTTPException: Если заказ не найден (404) или другая ошибка (400).
@@ -69,20 +70,20 @@ async def cancel_order(order_id: int, session: AsyncSession = Depends(database.g
 
 @router.patch("/{order_id}/status", response_model=OrderRead)
 async def update_order_status(order_id: int, status_update: OrderStatusUpdate,
-                              session: AsyncSession = Depends(database.get_db)) -> OrderRead:
+                              session: Session = Depends(database.get_db)) -> Order:
     """
     Обновить статус заказа.
 
     Args:
         order_id (int): Идентификатор заказа.
         status_update (OrderStatusUpdate): Новое значение статуса.
-        session (AsyncSession): Асинхронная сессия базы данных.
+        session (Session): Сессия базы данных.
 
     Raises:
         HTTPException: При ошибках валидации или невозможности обновления статуса (400).
 
     Returns:
-        OrderRead: Обновленный заказ.
+        Order: Обновленный заказ.
     """
     service = OrderService(session)
     try:

@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Sequence, Optional
@@ -8,12 +8,12 @@ from app.schemas.dish import DishCreate
 
 
 class DishService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: Session) -> None:
         """
         Инициализация сервиса блюд.
 
         Args:
-            session (AsyncSession): Асинхронная сессия базы данных.
+            session (Session): Сессия базы данных.
         """
         self.session = session
 
@@ -24,7 +24,7 @@ class DishService:
         Returns:
             Sequence[Dish]: Список всех блюд.
         """
-        result = await self.session.execute(select(Dish))
+        result = self.session.execute(select(Dish))
         return result.scalars().all()
 
     async def get_by_id(self, dish_id: int) -> Optional[Dish]:
@@ -37,7 +37,7 @@ class DishService:
         Returns:
             Optional[Dish]: Объект блюда, если найден, иначе None.
         """
-        return await self.session.get(Dish, dish_id)
+        return self.session.get(Dish, dish_id)
 
     async def create(self, dish_create: DishCreate) -> Dish:
         """
@@ -55,10 +55,10 @@ class DishService:
         dish = Dish(**dish_create.model_dump())
         self.session.add(dish)
         try:
-            await self.session.commit()
-            await self.session.refresh(dish)
+            self.session.commit()
+            self.session.refresh(dish)
         except SQLAlchemyError:
-            await self.session.rollback()
+            self.session.rollback()
             raise
         return dish
 
@@ -77,11 +77,11 @@ class DishService:
         """
         dish = await self.get_by_id(dish_id)
         if dish:
-            await self.session.delete(dish)
+            self.session.delete(dish)
             try:
-                await self.session.commit()
+                self.session.commit()
             except SQLAlchemyError:
-                await self.session.rollback()
+                self.session.rollback()
                 raise
             return True
         return False

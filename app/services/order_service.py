@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from datetime import datetime
@@ -18,12 +18,12 @@ class OrderService:
         "завершен": [],
     }
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: Session) -> None:
         """
         Инициализация сервиса заказов.
 
         Args:
-            session (AsyncSession): Асинхронная сессия базы данных.
+            session (Session): Сессия базы данных.
         """
         self.session = session
 
@@ -34,7 +34,7 @@ class OrderService:
         Returns:
             List[Order]: Список всех заказов.
         """
-        result = await self.session.execute(select(Order).options(selectinload(Order.dishes)))
+        result = self.session.execute(select(Order).options(selectinload(Order.dishes)))
         return result.scalars().all()
 
     async def create(self, order_create: OrderCreate) -> Order:
@@ -52,7 +52,7 @@ class OrderService:
         """
         dishes = []
         for dish_id in order_create.dish_ids:
-            dish = await self.session.get(Dish, dish_id)
+            dish = self.session.get(Dish, dish_id)
             if not dish:
                 raise ValueError(f"Блюдо с id={dish_id} не найдено")
             dishes.append(dish)
@@ -64,11 +64,11 @@ class OrderService:
             dishes=dishes,
         )
         self.session.add(order)
-        await self.session.commit()
-        await self.session.refresh(order)
+        self.session.commit()
+        self.session.refresh(order)
 
         # Явно загружаем блюда вместе с заказом
-        result = await self.session.execute(
+        result = self.session.execute(
             select(Order)
             .options(selectinload(Order.dishes))
             .where(Order.id == order.id)
@@ -90,13 +90,13 @@ class OrderService:
         Returns:
             bool: True, если заказ удалён, иначе False.
         """
-        order = await self.session.get(Order, order_id)
+        order = self.session.get(Order, order_id)
         if not order:
             return False
         if order.status != "в обработке":
             raise ValueError("Отменить заказ можно только в статусе 'в обработке'")
-        await self.session.delete(order)
-        await self.session.commit()
+        self.session.delete(order)
+        self.session.commit()
         return True
 
     async def update_status(self, order_id: int, status_update: OrderStatusUpdate) -> Order:
@@ -113,7 +113,7 @@ class OrderService:
         Returns:
             Order: Заказ с обновлённым статусом.
         """
-        result = await self.session.execute(
+        result = self.session.execute(
             select(Order).options(selectinload(Order.dishes)).where(Order.id == order_id)
         )
         order = result.scalars().first()
@@ -140,7 +140,7 @@ class OrderService:
             )
 
         order.status = new_status
-        await self.session.commit()
-        await self.session.refresh(order)
+        self.session.commit()
+        self.session.refresh(order)
 
         return order

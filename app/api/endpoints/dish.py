@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from typing import Sequence, List, Dict
 
 from app.schemas.dish import DishCreate, DishRead
@@ -11,12 +11,12 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[DishRead])
-async def get_dishes(session: AsyncSession = Depends(database.get_db)) -> Sequence[Dish]:
+async def get_dishes(session: Session = Depends(database.get_db)) -> Sequence[Dish]:
     """
     Получить список всех блюд.
 
     Args:
-        session (AsyncSession): Асинхронная сессия базы данных (через Depends).
+        session (Session): Сессия базы данных.
 
     Returns:
         Sequence[Dish]: Список всех блюд в базе данных.
@@ -26,13 +26,13 @@ async def get_dishes(session: AsyncSession = Depends(database.get_db)) -> Sequen
 
 
 @router.post("/", response_model=DishRead)
-async def create_dish(dish: DishCreate, session: AsyncSession = Depends(database.get_db)) -> Dish:
+async def create_dish(dish: DishCreate, session: Session = Depends(database.get_db)) -> Dish:
     """
     Создать новое блюдо.
 
     Args:
         dish (DishCreate): Данные для создания блюда.
-        session (AsyncSession): Асинхронная сессия базы данных.
+        session (Session): Сессия базы данных.
 
     Returns:
         Dish: Созданное блюдо с подробной информацией.
@@ -42,13 +42,13 @@ async def create_dish(dish: DishCreate, session: AsyncSession = Depends(database
 
 
 @router.delete("/{dish_id}")
-async def delete_dish(dish_id: int, session: AsyncSession = Depends(database.get_db)) -> Dict[str, str]:
+async def delete_dish(dish_id: int, session: Session = Depends(database.get_db)) -> Dict[str, str]:
     """
     Удалить блюдо по ID.
 
     Args:
         dish_id (int): Идентификатор блюда для удаления.
-        session (AsyncSession): Асинхронная сессия базы данных.
+        session (Session): Сессия базы данных.
 
     Raises:
         HTTPException: Если блюдо с указанным ID не найдено (404).
