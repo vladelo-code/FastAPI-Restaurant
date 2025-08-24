@@ -70,7 +70,7 @@ FastAPI-Restaurant/
 Клонируй репозиторий:
 
 ```bash
-git clone https://github.com/vladelo777/FastAPI-Restaurant.git
+git clone https://github.com/vladelo-code/FastAPI-Restaurant.git
 cd FastAPI-Restaurant
 ```
 
